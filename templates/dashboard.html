@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block head %}
+<style>
+  /* Guaranteed mobile edge perfection for Overview */
+  @media (max-width: 900px) {
+    html {
+      overflow-x: hidden !important;
+      overflow-y: scroll !important;
+      -webkit-overflow-scrolling: touch !important;
+      height: 100% !important;
+    }
+    body {
+      overflow-x: hidden !important;
+      overflow-y: visible !important;
+      -webkit-overflow-scrolling: touch !important;
+      min-height: 100% !important;
+      height: auto !important;
+    }
+    .shell, .main {
+      overflow: visible !important;
+      max-width: 100% !important;
+      width: 100% !important;
+      height: auto !important;
+    }
+    .main {
+      padding: 16px 14px calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+      box-sizing: border-box !important;
+    }
+    .dashboard-hero {
+      display: flex !important;
+      flex-direction: column !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
+      padding: 20px 16px !important;
+      gap: 18px !important;
+      border-radius: 18px !important;
+    }
+    .dashboard-hero h2, .dashboard-hero p, .dashboard-hero .hero-figure, .dashboard-hero .hero-figure-secondary {
+      word-break: break-word !important;
+      overflow-wrap: break-word !important;
+    }
+    .dashboard-hero-metrics {
+      display: flex !important;
+      flex-direction: column !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      border-radius: 14px !important;
+      overflow: hidden !important;
+    }
+    .hero-metric {
+      width: 100% !important;
+      box-sizing: border-box !important;
+      padding: 14px 16px !important;
+      border-left: 0 !important;
+      border-top: 1px solid rgba(255,255,255,.08) !important;
+    }
+    .hero-metric:first-child {
+      border-top: 0 !important;
+    }
+    .chart-card {
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
+      padding: 16px 14px 12px !important;
+      border-radius: 16px !important;
+    }
+    .chart-card canvas {
+      width: 100% !important;
+      max-width: 100% !important;
+      display: block !important;
+      box-sizing: border-box !important;
+    }
+    .report-grid {
+      display: flex !important;
+      flex-direction: column !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .report-grid > div {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      box-sizing: border-box !important;
+    }
+    .report-grid .table-wrap {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-sizing: border-box !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      border-radius: 14px !important;
+    }
+    .report-grid .table-wrap table {
+      width: 100% !important;
+      min-width: 100% !important;
+    }
+    .report-grid .table-wrap th, .report-grid .table-wrap td {
+      padding: 10px 10px !important;
+    }
+    .stat-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 10px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .stat-card {
+      padding: 14px 12px !important;
+      border-radius: 14px !important;
+      box-sizing: border-box !important;
+      min-height: auto !important;
+      overflow: hidden !important;
+    }
+    .dashboard-signal-row {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .dashboard-signal {
+      width: 100% !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
+      border-radius: 13px !important;
+    }
+    .dashboard-signal span {
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+    }
+  }
+</style>
+{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div>
+    <span class="eyebrow" id="today-label"></span>
+    <h1 id="greeting-text">Good day, {{ settings.business_name }}.</h1>
+    <p>A calm operating view of stock, demand signals and the counter — with inventory intelligence doing the heavy lifting.</p>
+  </div>
+  <div class="page-head-actions">
+    <a href="{{ url_for('inventory_add') }}" class="btn">Add item</a>
+    <a href="{{ url_for('billing') }}" class="btn btn-primary">Open point of sale</a>
+  </div>
+</div>
+
+{% if product_count == 0 %}
+<div class="empty-state">
+  <span class="eyebrow">Nothing yet</span>
+  <h2>Your workspace is ready and completely empty.</h2>
+  <p>Add your first product to unlock billing, code labels and ML-driven reorder suggestions.</p>
+  <a href="{{ url_for('inventory_add') }}" class="btn btn-primary">Add first product</a>
+</div>
+{% else %}
+
+<section class="hero-card dashboard-hero" aria-label="Business performance snapshot">
+  <div class="dashboard-hero-main">
+    <div>
+      <div class="hero-kicker"><span class="hero-kicker-dot"></span>Live business snapshot</div>
+      <h2>Inventory first. Billing when it matters.</h2>
+      <p>Your stock intelligence stays at the centre of the workspace, with the counter ready when a sale needs to happen.</p>
+    </div>
+    <a href="{{ url_for('inventory') }}" class="hero-inline-link">
+      <span>Open inventory</span>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>
+      </svg>
+    </a>
+  </div>
+
+  <div class="dashboard-hero-metrics">
+    <div class="hero-metric hero-metric--primary">
+      <span class="stat-label">Today's sales</span>
+      <strong class="hero-figure" data-count-to="{{ '%.2f'|format(today_total) }}" data-prefix="{{ settings.currency_symbol }}">{{ settings.currency_symbol }}{{ "%.2f"|format(today_total) }}</strong>
+      <span class="stat-sub">{{ today_count }} transaction{{ 's' if today_count != 1 else '' }} recorded today</span>
+    </div>
+
+    <div class="hero-metric">
+      <span class="stat-label">Last 7 days</span>
+      <strong class="hero-figure-secondary" data-count-to="{{ '%.2f'|format(week_total) }}" data-prefix="{{ settings.currency_symbol }}">{{ settings.currency_symbol }}{{ "%.2f"|format(week_total) }}</strong>
+      <span class="stat-sub">Recent revenue</span>
+    </div>
+
+    <div class="hero-metric hero-metric--status">
+      <span class="stat-label">Forecast engine</span>
+      <strong class="hero-status-value">
+        <span class="hero-status-dot"></span>
+        {% if model_status.status == 'trained' %}Active
+        {% elif model_status.status == 'insufficient_data' %}Learning
+        {% else %}Ready to learn{% endif %}
+      </strong>
+      <span class="stat-sub">
+        {% if model_status.status == 'trained' %}{{ model_status.products_covered }} products modelled
+        {% elif model_status.status == 'insufficient_data' %}Builds from your sales history
+        {% else %}Add sales history to unlock forecasts{% endif %}
+      </span>
+    </div>
+  </div>
+</section>
+
+<div class="dashboard-signal-row">
+  <div class="dashboard-signal">
+    <span class="signal-icon signal-icon--warn" aria-hidden="true">!</span>
+    <span><strong>{{ low_stock|length }}</strong> low-stock item{{ '' if low_stock|length == 1 else 's' }}</span>
+    <a href="{{ url_for('alerts') }}">Review</a>
+  </div>
+  <div class="dashboard-signal">
+    <span class="signal-icon signal-icon--ai" aria-hidden="true">✦</span>
+    <span><strong>{{ stockout_soon|length }}</strong> forecast signal{{ '' if stockout_soon|length == 1 else 's' }}</span>
+    <a href="{{ url_for('ai_center') }}">Open AI</a>
+  </div>
+  <div class="dashboard-signal dashboard-signal--quiet">
+    <span class="signal-icon signal-icon--ok" aria-hidden="true">✓</span>
+    <span>Local mode · your data stays on this device</span>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-label">Items in inventory</div>
+    <div class="stat-value" data-count-to="{{ product_count }}">{{ product_count }}</div>
+    <div class="stat-sub">Active products tracked</div>
+  </div>
+  <div class="stat-card warn">
+    <div class="stat-label">Low stock</div>
+    <div class="stat-value" data-count-to="{{ low_stock|length }}">{{ low_stock|length }}</div>
+    <div class="stat-sub">At or below reorder level</div>
+  </div>
+  <div class="stat-card accent">
+    <div class="stat-label">Predicted to run out (7d)</div>
+    <div class="stat-value" data-count-to="{{ stockout_soon|length }}">{{ stockout_soon|length }}</div>
+    <div class="stat-sub">From the demand model</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Forecast engine</div>
+    <div class="stat-value" style="font-size:16px;">
+      {% if model_status.status == 'trained' %}Active
+      {% elif model_status.status == 'insufficient_data' %}Learning
+      {% else %}Not started{% endif %}
+    </div>
+    <div class="stat-sub">
+      {% if model_status.status == 'trained' %}{{ model_status.products_covered }} products modelled
+      {% else %}Needs more sales history{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="chart-card">
+  <div class="section-title" style="margin:0 0 10px;">
+    <h2>Sales, last 14 days</h2>
+  </div>
+  <div style="position: relative; width: 100%; max-width: 100%; overflow: hidden;">
+    <canvas id="trendChart" height="90" style="max-width: 100%; width: 100%; display: block;"></canvas>
+  </div>
+</div>
+
+<div class="report-grid">
+  <div>
+    <div class="section-title">
+      <h2>Recent transactions</h2>
+      <a href="{{ url_for('reports') }}" class="see-all">View reports</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Invoice</th><th>Time</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          {% for t in recent %}
+          <tr>
+            <td class="row-name mono">{{ t.invoice_no }}</td>
+            <td class="row-sub">{{ t.created_at.replace('T', ' ') }}</td>
+            <td class="num">{{ settings.currency_symbol }}{{ "%.2f"|format(t.total) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="empty-row">No sales recorded yet. They will appear here once you complete a checkout.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-title">
+      <h2>Needs attention</h2>
+      <a href="{{ url_for('alerts') }}" class="see-all">All alerts</a>
+    </div>
+    <div class="table-wrap">
+      {% if low_stock or stockout_soon %}
+        {% for p in low_stock[:4] %}
+        <div class="alert-row alert-row--warn" style="grid-template-columns: 1fr auto;">
+          <div>
+            <div class="a-name">{{ p.name }}</div>
+            <div class="a-meta">{{ p.stock_qty|round(1) }} {{ p.unit_label }} left &middot; reorder at {{ p.reorder_level|round(1) }}</div>
+          </div>
+          <span class="badge badge-warn">Low stock</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-row">
+          <strong>Everything is well stocked</strong>
+          Nothing needs attention right now.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Time-aware greeting
+  (function() {
+    var hour = new Date().getHours();
+    var greeting = 'Good day';
+    if (hour < 12) greeting = 'Good morning';
+    else if (hour < 17) greeting = 'Good afternoon';
+    else greeting = 'Good evening';
+    var el = document.getElementById('greeting-text');
+    if (el) el.textContent = greeting + ', {{ settings.business_name }}.';
+
+    var dayLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+    document.getElementById('today-label').textContent = dayLabel.toUpperCase();
+  })();
+</script>
+{% if product_count > 0 %}
+<script src="{{ url_for('static', filename='vendor/chart.min.js') }}"></script>
+<script>
+  const trendData = {{ trend|tojson }};
+  const labels = [];
+  const values = [];
+  const today = new Date();
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    labels.push(d.toLocaleDateString(undefined, {month:'short', day:'numeric'}));
+    values.push(trendData[key] || 0);
+  }
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(191,155,98,0.08)';
+  const tickColor = isDark ? '#7e8a9e' : '#8a90a0';
+
+  new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: '#c49a5a',
+        backgroundColor: isDark
+          ? 'rgba(196,154,90,0.06)'
+          : 'rgba(191,155,98,0.08)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: '#c49a5a',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
+        borderWidth: 2.5,
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false }, tooltip: { 
+        backgroundColor: isDark ? '#1a1e2c' : '#0f172a',
+        titleFont: { family: 'Inter', size: 12 },
+        bodyFont: { family: 'IBM Plex Mono', size: 12 },
+        padding: 10,
+        cornerRadius: 8,
+        displayColors: false,
+      }},
+      scales: {
+        y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { family: 'IBM Plex Mono', size: 11 } } },
+        x: { grid: { display: false }, ticks: { color: tickColor, font: { family: 'IBM Plex Mono', size: 11 } } }
+      },
+      interaction: { intersect: false, mode: 'index' },
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}

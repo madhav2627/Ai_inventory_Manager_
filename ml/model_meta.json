@@ -1,0 +1,16 @@
+{
+  "status": "trained",
+  "trained_at": "2026-09-16T18:50:49",
+  "rows_available": 2158,
+  "distinct_days": 46,
+  "mean_absolute_error": 0.46,
+  "products_covered": 58,
+  "categories": [
+    "Beverages",
+    "Dairy",
+    "Groceries",
+    "Household",
+    "Packaged Foods",
+    "Personal Care"
+  ]
+}

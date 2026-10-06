@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+{% block title %}Inventory{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Stock room</span>
+    <h1>Inventory</h1>
+    <p>{{ products|length }} item{{ 's' if products|length != 1 else '' }} on record.</p>
+  </div>
+  <div class="page-head-actions" style="display:flex;gap:8px;flex-wrap:wrap;">
+    <a href="{{ url_for('scanner_page') }}" class="btn btn-brass">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/></svg>
+      Fast Scanner
+    </a>
+    <a href="{{ url_for('inventory_add') }}" class="btn btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Add item
+    </a>
+  </div>
+</div>
+
+<!-- Expiry Alert Bar -->
+<div id="expiry-alert-bar" class="card inventory-expiry-alert" hidden>
+  <div class="inventory-expiry-alert__title">⚠️ Expiry Alerts</div>
+  <div id="expiry-alert-items" class="inventory-expiry-alert__items"></div>
+</div>
+
+<div class="inventory-toolbar">
+  <form method="get" class="inventory-search-form" role="search">
+    <label class="search-label" for="inventory-search">Find an item</label>
+    <div class="inventory-search-control">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.3-4.3"></path>
+      </svg>
+      <input id="inventory-search" type="search" name="q" value="{{ query }}" placeholder="Name, brand, or barcode" autocomplete="off">
+      {% if query %}
+      <a class="search-clear" href="{{ url_for('inventory') }}" aria-label="Clear inventory search">Clear</a>
+      {% else %}
+      <kbd class="search-shortcut" aria-hidden="true">/</kbd>
+      {% endif %}
+    </div>
+    <p class="field-helper" id="inventory-search-help">Search by item name, brand, or barcode.</p>
+  </form>
+  <div class="inventory-toolbar__summary" aria-live="polite">
+    <strong>{{ products|length }}</strong> item{{ 's' if products|length != 1 else '' }} shown
+    {% if query %}<span>for “{{ query }}”</span>{% endif %}
+  </div>
+</div>
+
+{% if products %}
+<!-- Desktop Data Table (Screens > 768px) -->
+<div class="table-wrap inventory-table-wrap inventory-desktop-table">
+  <table class="inventory-table">
+    <colgroup>
+      <col class="col-item">
+      <col class="col-category">
+      <col class="col-brand">
+      <col class="col-code">
+      <col class="col-price">
+      <col class="col-stock">
+      <col class="col-status">
+      <col class="col-expiry">
+      <col class="col-actions">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Category</th>
+        <th>Brand</th>
+        <th>Code</th>
+        <th class="num">Price</th>
+        <th class="num">Stock</th>
+        <th>Status</th>
+        <th>Expiry</th>
+        <th class="inventory-actions-heading"><span class="visually-hidden">Actions</span>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in products %}
+      <tr>
+        <td class="inventory-item-cell">
+          <div class="inventory-item">
+            {% if p.image_url %}
+            <img class="inventory-item__image" src="/inventory/image_proxy?url={{ p.image_url | urlencode }}"
+                 onerror="this.style.display='none'" alt="">
+            {% else %}
+            <span class="inventory-item__image inventory-item__image--placeholder" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h8M8 13h5"/></svg>
+            </span>
+            {% endif %}
+            <div class="inventory-item__copy">
+              <div class="row-name">{{ p.name }}</div>
+              {% if p.manufacturer %}<div class="inventory-item__manufacturer">{{ p.manufacturer }}</div>{% endif %}
+            </div>
+          </div>
+        </td>
+        <td class="row-sub inventory-category-cell">{{ p.category }}</td>
+        <td class="row-sub inventory-brand-cell">{{ p.brand or '—' }}</td>
+        <td class="mono row-sub inventory-code-cell">{{ p.code_value or '—' }}</td>
+        <td class="num">{{ settings.currency_symbol }}{{ "%.2f"|format(p.unit_price) }}</td>
+        <td class="num">{{ p.stock_qty|round(1) }} {{ p.unit_label }}</td>
+        <td>
+          {% if p.stock_qty <= 0 %}
+            <span class="badge badge-danger">Out of stock</span>
+          {% elif p.stock_qty <= p.reorder_level %}
+            <span class="badge badge-warn">Low stock</span>
+          {% else %}
+            <span class="badge badge-ok">In stock</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if p.expiry_date %}
+            <span class="expiry-cell" data-expiry="{{ p.expiry_date }}">{{ p.expiry_date }}</span>
+          {% else %}
+            <span style="color:var(--muted);font-size:12px;">—</span>
+          {% endif %}
+        </td>
+        <td class="inventory-actions-cell">
+          <div class="inventory-actions">
+            <a href="{{ url_for('inventory_edit', product_id=p.id) }}" class="btn btn-ghost btn-sm" aria-label="Edit {{ p.name }}">Edit</a>
+            <form method="post" action="{{ url_for('inventory_delete', product_id=p.id) }}"
+                  onsubmit="return confirm('Remove {{ p.name }} from inventory?');">
+              <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--danger);" aria-label="Delete {{ p.name }}">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Mobile Product Cards View (Screens <= 768px) -->
+<div class="inventory-mobile-cards">
+  {% for p in products %}
+  <div class="inv-mobile-card">
+    <div class="inv-mobile-card__header">
+      {% if p.image_url %}
+      <img class="inv-mobile-card__img" src="/inventory/image_proxy?url={{ p.image_url | urlencode }}" onerror="this.style.display='none'" alt="">
+      {% else %}
+      <div class="inv-mobile-card__img inv-mobile-card__img--placeholder">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h8M8 13h5"/></svg>
+      </div>
+      {% endif %}
+      <div class="inv-mobile-card__info">
+        <div class="inv-mobile-card__name">{{ p.name }}</div>
+        {% if p.manufacturer %}<div class="inv-mobile-card__mfg">{{ p.manufacturer }}</div>{% endif %}
+        <div class="inv-mobile-card__badges">
+          <span class="inv-mobile-pill">{{ p.category }}</span>
+          {% if p.brand %}<span class="inv-mobile-pill">{{ p.brand }}</span>{% endif %}
+          {% if p.code_value %}<span class="inv-mobile-pill mono">{{ p.code_value }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="inv-mobile-card__stats">
+      <div class="inv-mobile-stat">
+        <span class="inv-mobile-stat__label">Price</span>
+        <span class="inv-mobile-stat__val inv-mobile-stat__val--price">{{ settings.currency_symbol }}{{ "%.2f"|format(p.unit_price) }}</span>
+      </div>
+      <div class="inv-mobile-stat">
+        <span class="inv-mobile-stat__label">Stock</span>
+        <span class="inv-mobile-stat__val">{{ p.stock_qty|round(1) }} {{ p.unit_label }}</span>
+      </div>
+      <div class="inv-mobile-stat inv-mobile-stat--status">
+        {% if p.stock_qty <= 0 %}
+          <span class="badge badge-danger">Out of stock</span>
+        {% elif p.stock_qty <= p.reorder_level %}
+          <span class="badge badge-warn">Low stock</span>
+        {% else %}
+          <span class="badge badge-ok">In stock</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if p.expiry_date %}
+    <div class="inv-mobile-card__expiry">
+      <span class="inv-mobile-stat__label" style="margin-right:6px;">Expires:</span>
+      <span class="expiry-cell" data-expiry="{{ p.expiry_date }}">{{ p.expiry_date }}</span>
+    </div>
+    {% endif %}
+
+    <div class="inv-mobile-card__actions">
+      <a href="{{ url_for('inventory_edit', product_id=p.id) }}" class="btn btn-ghost btn-sm inv-mobile-btn-edit" aria-label="Edit {{ p.name }}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit
+      </a>
+      <form method="post" action="{{ url_for('inventory_delete', product_id=p.id) }}"
+            onsubmit="return confirm('Remove {{ p.name }} from inventory?');" style="flex:1; margin:0;">
+        <button type="submit" class="btn btn-ghost btn-sm inv-mobile-btn-del" style="color:var(--danger); width:100%;" aria-label="Delete {{ p.name }}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Delete
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <span class="eyebrow">Nothing yet</span>
+  <h2>{{ ('No items match "' + query + '"') if query else 'No items in inventory yet' }}</h2>
+  <p>{{ 'Try a different search term.' if query else "Add your first product, or scan one in with the Fast Scanner." }}</p>
+  {% if not query %}
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+    <a href="{{ url_for('scanner_page') }}" class="btn btn-brass">⚡ Fast Scanner</a>
+    <a href="{{ url_for('inventory_add') }}" class="btn btn-primary">+ Add manually</a>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+/* ── Expiry formatting ────────────────────────────── */
+.expiry-cell { font-size:12px; font-weight:600; padding:2px 8px; border-radius:8px; display:inline-flex; align-items:center; }
+.expiry-cell.fresh    { background:#d1fae5; color:#065f46; }
+.expiry-cell.near     { background:#fef3c7; color:#92400e; }
+.expiry-cell.expired  { background:#fee2e2; color:#991b1b; }
+[data-theme="dark"] .expiry-cell.fresh   { background:#064e3b; color:#6ee7b7; }
+[data-theme="dark"] .expiry-cell.near    { background:#451a03; color:#fcd34d; }
+[data-theme="dark"] .expiry-cell.expired { background:#450a0a; color:#fca5a5; }
+
+/* ── Dual Desktop Table / Mobile Card Switcher ───── */
+.inventory-desktop-table {
+  display: block;
+}
+.inventory-mobile-cards {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .inventory-search-form {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .inventory-search-form input {
+    width: 100% !important;
+    min-height: 44px !important;
+    font-size: 16px !important;
+  }
+
+  .inventory-desktop-table {
+    display: none !important;
+  }
+
+  .inventory-mobile-cards {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .inv-mobile-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 16px);
+    padding: 14px;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .inv-mobile-card__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .inv-mobile-card__img {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .inv-mobile-card__img--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-3);
+  }
+
+  .inv-mobile-card__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .inv-mobile-card__name {
+    font-size: 15.5px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .inv-mobile-card__mfg {
+    font-size: 11.5px;
+    color: var(--text-2);
+    margin-top: 2px;
+  }
+
+  .inv-mobile-card__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+  }
+
+  .inv-mobile-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 11px;
+    background: rgba(191, 155, 98, 0.12);
+    color: var(--brass-deep);
+    font-weight: 500;
+  }
+
+  .inv-mobile-pill.mono {
+    font-family: var(--font-mono);
+    background: var(--paper);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+  }
+
+  [data-theme="dark"] .inv-mobile-pill {
+    background: rgba(191, 155, 98, 0.2);
+    color: #e2ba7d;
+  }
+  [data-theme="dark"] .inv-mobile-pill.mono {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-2);
+  }
+
+  .inv-mobile-card__stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--paper);
+    padding: 8px 12px;
+    border-radius: 10px;
+    gap: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+  }
+
+  [data-theme="dark"] .inv-mobile-card__stats {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .inv-mobile-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .inv-mobile-stat__label {
+    font-size: 10.5px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+  }
+
+  .inv-mobile-stat__val {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-1);
+  }
+
+  .inv-mobile-stat__val--price {
+    font-size: 16px;
+    color: var(--brass-deep);
+  }
+
+  [data-theme="dark"] .inv-mobile-stat__val--price {
+    color: #e2ba7d;
+  }
+
+  .inv-mobile-stat--status {
+    align-items: flex-end;
+  }
+
+  .inv-mobile-card__expiry {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    padding: 0 4px;
+  }
+
+  .inv-mobile-card__actions {
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+
+  .inv-mobile-card__actions .btn {
+    flex: 1;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+
+  .inv-mobile-btn-edit {
+    background: var(--paper) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--ink) !important;
+  }
+
+  .inv-mobile-btn-del {
+    background: rgba(239, 68, 68, 0.08) !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+    color: var(--danger) !important;
+  }
+}
+</style>
+<script>
+(function () {
+  // Color-code expiry cells
+  const cells = document.querySelectorAll(".expiry-cell[data-expiry]");
+  const alerts = [];
+  cells.forEach(cell => {
+    const dateStr = cell.dataset.expiry;
+    if (!dateStr) return;
+    try {
+      const expiry = new Date(dateStr);
+      const today  = new Date();
+      const days   = Math.round((expiry - today) / 864e5);
+      if (days < 0) {
+        cell.classList.add("expired");
+        cell.title = `Expired ${Math.abs(days)} days ago`;
+        alerts.push({ text: cell.closest("tr").querySelector(".row-name").textContent.trim(), days, cls: "expired" });
+      } else if (days <= 30) {
+        cell.classList.add("near");
+        cell.title = `Expires in ${days} days`;
+        if (days <= 7) alerts.push({ text: cell.closest("tr").querySelector(".row-name").textContent.trim(), days, cls: "near" });
+      } else {
+        cell.classList.add("fresh");
+        cell.title = `Fresh · ${days} days remaining`;
+      }
+    } catch (e) {}
+  });
+
+  // Show expiry alert bar
+  if (alerts.length > 0) {
+    const bar = document.getElementById("expiry-alert-bar");
+    const items = document.getElementById("expiry-alert-items");
+    if (bar && items) {
+      bar.hidden = false;
+      items.innerHTML = alerts.map(a => {
+        const label = a.days < 0 ? `Expired ${Math.abs(a.days)}d ago` : `Expires in ${a.days}d`;
+        return `<span class="inventory-expiry-alert__chip ${a.cls}">${a.text} · ${label}</span>`;
+      }).join("");
+    }
+  }
+})();
+</script>
+{% endblock %}

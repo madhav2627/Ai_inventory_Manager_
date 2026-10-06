@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">AI Inventory Manager</string>
+    <!-- Replace with this project's production Vercel URL after deployment. -->
+    <string name="default_web_url">https://your-project.vercel.app</string>
+</resources>
