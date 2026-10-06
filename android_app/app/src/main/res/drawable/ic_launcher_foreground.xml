@@ -1,0 +1,64 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="1.2"
+        android:scaleY="1.2"
+        android:translateX="-10.8"
+        android:translateY="-10.8">
+        <!-- Outer Box Frame -->
+        <path
+            android:strokeColor="#C5A059"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M35,32 L28,32 A4,4 0 0,0 24,36 L24,43" />
+        <path
+            android:strokeColor="#C5A059"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M73,32 L80,32 A4,4 0 0,1 84,36 L84,43" />
+        <path
+            android:strokeColor="#C5A059"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M24,65 L24,72 A4,4 0 0,0 28,76 L35,76" />
+        <path
+            android:strokeColor="#C5A059"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M84,65 L84,72 A4,4 0 0,1 80,76 L73,76" />
+
+        <!-- Barcode Lines -->
+        <path
+            android:fillColor="#C5A059"
+            android:pathData="M34,40 h3 v28 h-3 z" />
+        <path
+            android:fillColor="#C5A059"
+            android:pathData="M41,40 h5 v28 h-5 z" />
+        <path
+            android:fillColor="#C5A059"
+            android:pathData="M50,40 h2 v28 h-2 z" />
+        <path
+            android:fillColor="#C5A059"
+            android:pathData="M55,40 h6 v28 h-6 z" />
+        <path
+            android:fillColor="#C5A059"
+            android:pathData="M65,40 h2 v28 h-2 z" />
+        <path
+            android:fillColor="#C5A059"
+            android:pathData="M70,40 h4 v28 h-4 z" />
+
+        <!-- Red / Gold Laser Scan Beam -->
+        <path
+            android:strokeColor="#EF4444"
+            android:strokeWidth="2"
+            android:strokeLineCap="round"
+            android:pathData="M20,54 L88,54" />
+    </group>
+</vector>

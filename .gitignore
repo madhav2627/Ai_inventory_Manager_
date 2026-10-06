@@ -64,6 +64,10 @@ gen_cert.py
 
 # Android
 .gradle/
+**/build/
+android_app/local.properties
+android_app/.gradle/
 
 # Node
 node_modules/
+
