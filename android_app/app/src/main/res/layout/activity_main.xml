@@ -91,9 +91,9 @@
         android:padding="32dp">
 
         <ImageView
-            android:layout_width="88dp"
-            android:layout_height="88dp"
-            android:src="@drawable/ic_launcher_foreground"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:src="@drawable/app_logo"
             android:contentDescription="@string/app_name" />
 
         <TextView
