@@ -620,7 +620,7 @@
       if (!currentDupId) return;
       const qty = parseFloat(prompt("How many units to add?", "1") || "0");
       if (qty <= 0) { closeDupModal(); return; }
-      fetch(`/inventory/stock_increase/${currentDupId}`, {
+      fetch(window.apiUrl(`/inventory/stock_increase/${currentDupId}`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ qty }),
@@ -659,7 +659,7 @@
     const forceParam = (force || fromScanner) ? '&force=1' : '';
     const url = `/inventory/barcode_lookup?code=${encodeURIComponent(code)}${forceParam}${retryParam}`;
 
-    fetch(url)
+    fetch(window.apiUrl(url))
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => {
         setLoading(false);

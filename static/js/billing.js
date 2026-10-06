@@ -245,7 +245,7 @@
       aiAnalyzingState.style.display = "block";
       aiResultState.style.display = "none";
       
-      fetch(`/inventory/ai_lookup?code=${encodeURIComponent(code)}&hint=${encodeURIComponent(hint)}`)
+      fetch(window.apiUrl(`/inventory/ai_lookup?code=${encodeURIComponent(code)}&hint=${encodeURIComponent(hint)}`))
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(data => {
           aiProdName.value = data.name;
@@ -285,7 +285,7 @@
     if (!code) return;
     flashScanStatus(`Scanning code ${code}...`, false);
 
-    fetch(`/billing/lookup?code=${encodeURIComponent(code)}`)
+    fetch(window.apiUrl(`/billing/lookup?code=${encodeURIComponent(code)}`))
       .then((r) => r.json().then((data) => ({ ok: r.ok, data })))
       .then(({ ok, data }) => {
         if (data.found && data.product) {
@@ -327,7 +327,7 @@
             aiProdCode.value = code;
             if (aiCustomHint) aiCustomHint.value = "";
 
-            fetch(`/inventory/barcode_lookup?code=${encodeURIComponent(code)}`)
+            fetch(window.apiUrl(`/inventory/barcode_lookup?code=${encodeURIComponent(code)}`))
               .then((r) => (r.ok ? r.json() : Promise.reject()))
               .then((lookupRes) => {
                 if (lookupRes._found && lookupRes.name) {
@@ -390,7 +390,7 @@
       const originalHtml = saveAiBtn.innerHTML;
       saveAiBtn.innerHTML = '<span class="btn-spinner" style="border-width:2px; width:12px; height:12px; margin-right:6px;"></span> Saving...';
       
-      fetch("/barcode/create_product", {
+      fetch(window.apiUrl("/barcode/create_product"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -446,7 +446,7 @@
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       const q = searchInput.value.trim();
-      fetch(`/billing/search?q=${encodeURIComponent(q)}`)
+      fetch(window.apiUrl(`/billing/search?q=${encodeURIComponent(q)}`))
         .then((r) => r.json())
         .then((products) => {
           productGrid.innerHTML = "";
@@ -485,7 +485,7 @@
     checkoutBtn.disabled = true;
     checkoutBtn.textContent = "Processing\u2026";
 
-    fetch("/billing/checkout", {
+    fetch(window.apiUrl("/billing/checkout"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -503,7 +503,7 @@
           checkoutBtn.textContent = "Complete sale";
           return;
         }
-        window.open(`/receipt/${data.invoice_no}`, "_blank");
+        window.open(window.apiUrl(`/receipt/${data.invoice_no}`), "_blank");
         cart = [];
         renderCart();
         checkoutBtn.textContent = "Complete sale";

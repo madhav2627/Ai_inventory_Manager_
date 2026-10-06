@@ -18,6 +18,7 @@ from flask import (
     jsonify, send_file, flash, abort, session, g
 )
 from werkzeug.security import check_password_hash
+from flask_cors import CORS
 
 import database as db
 from ml import train as ml_train
@@ -26,21 +27,57 @@ from ml import inventory_ai as ai_engine
 import codegen
 
 app = Flask(__name__)
-# Session secret key: reads from Vercel environment variable, with a persistent fallback
+
+# Deployment & Environment Settings
+is_production = bool(os.environ.get("RENDER") or os.environ.get("VERCEL") or os.environ.get("PRODUCTION"))
+frontend_env = os.environ.get("FRONTEND_URL", "").strip()
+cross_origin = bool(os.environ.get("CROSS_ORIGIN") or (frontend_env and not os.environ.get("SAME_ORIGIN")))
+API_BASE_URL = os.environ.get("API_BASE_URL", "").strip().rstrip("/")
+
+# Session secret key
 app.secret_key = os.environ.get("SECRET_KEY") or "ai-inv-secret-prod-42e0c1f8b24f44929cf6a1fb0b146ca533c9f694cf678859"
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=bool(os.environ.get("VERCEL")),
+    SESSION_COOKIE_SAMESITE="None" if cross_origin else "Lax",
+    SESSION_COOKIE_SECURE=True if (cross_origin or is_production) else False,
     PERMANENT_SESSION_LIFETIME=timedelta(days=30),
 )
 
+# CORS Configuration
+allowed_origins = [
+    "http://localhost:5000",
+    "http://127.0.0.1:5000",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+if frontend_env:
+    for u in frontend_env.split(","):
+        clean_u = u.strip().rstrip("/")
+        if clean_u:
+            allowed_origins.append(clean_u)
+            allowed_origins.append(clean_u + "/")
+
+CORS(
+    app,
+    resources={r"/*": {"origins": allowed_origins if frontend_env != "*" else "*"}},
+    supports_credentials=(frontend_env != "*"),
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+)
 
 # ---------------------------------------------------------------------------
 # Bootstrap & Authentication Middleware
 # ---------------------------------------------------------------------------
 
-OPEN_ENDPOINTS = {'login', 'register', 'static', 'favicon'}
+OPEN_ENDPOINTS = {'login', 'register', 'static', 'favicon', 'health'}
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({
+        "status": "ok",
+        "service": "ai-inventory-manager",
+        "database": "postgres" if db.USING_POSTGRES else "sqlite",
+    }), 200
 
 @app.route('/favicon.ico')
 def favicon():
@@ -89,7 +126,7 @@ def inject_user():
             g.user = user
         except Exception:
             user = None
-    return dict(current_user=user)
+    return dict(current_user=user, api_base_url=API_BASE_URL)
 
 
 @app.teardown_appcontext

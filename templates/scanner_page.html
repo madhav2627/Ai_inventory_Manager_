@@ -409,13 +409,13 @@
     addLoadingCard(code, loadingCardId);
 
     // Lookup — with automatic retry on network failure
-    fetchWithRetry(`/inventory/barcode_lookup?code=${encodeURIComponent(code)}`)
+    fetchWithRetry(window.apiUrl(`/inventory/barcode_lookup?code=${encodeURIComponent(code)}`))
       .then(data => {
         removeCard(loadingCardId);
 
         if (data._duplicate) {
           if (currentMode === "receive") {
-            fetch(`/inventory/stock_increase/${data._existing_id}`, {
+            fetch(window.apiUrl(`/inventory/stock_increase/${data._existing_id}`), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ qty: 1 }),
@@ -579,7 +579,7 @@
     btn.textContent = "⏳ Asking AI…";
     const card = btn.closest(".scan-result-card");
 
-    fetch(`/inventory/barcode_lookup?code=${encodeURIComponent(code)}&force=1`)
+    fetch(window.apiUrl(`/inventory/barcode_lookup?code=${encodeURIComponent(code)}&force=1`))
       .then(r => r.json())
       .then(data => {
         if (data._found && data.name) {
@@ -609,7 +609,7 @@
     const metaEl = card.querySelector(".src-meta");
     if (nameEl) nameEl.textContent = "Retrying lookup…";
 
-    fetch(`/inventory/barcode_lookup?code=${encodeURIComponent(code)}&retry=1`)
+    fetch(window.apiUrl(`/inventory/barcode_lookup?code=${encodeURIComponent(code)}&retry=1`))
       .then(r => r.json())
       .then(data => {
         if (data._found && data.name) {
@@ -630,7 +630,7 @@
 
   window.addStock = function (productId, btn) {
     btn.disabled = true;
-    fetch(`/inventory/stock_increase/${productId}`, {
+    fetch(window.apiUrl(`/inventory/stock_increase/${productId}`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ qty: 1 }),

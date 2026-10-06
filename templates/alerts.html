@@ -92,7 +92,7 @@
     const status = document.getElementById("retrain-status");
     btn.disabled = true;
     btn.innerHTML = '<span class="btn-spinner"></span> Retraining\u2026';
-    fetch("/ml/retrain", { method: "POST" })
+    fetch(window.apiUrl("/ml/retrain"), { method: "POST" })
       .then((r) => r.json())
       .then((data) => {
         btn.disabled = false;

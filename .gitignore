@@ -65,3 +65,5 @@ gen_cert.py
 # Android
 .gradle/
 
+# Node
+node_modules/

@@ -7,7 +7,7 @@
   }
 
   function load(days) {
-    fetch(`/reports/data?days=${days}`)
+    fetch(window.apiUrl(`/reports/data?days=${days}`))
       .then((r) => r.json())
       .then((data) => {
         document.getElementById("stat-revenue").textContent = money(data.totals.revenue);

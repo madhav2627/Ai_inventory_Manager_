@@ -176,7 +176,7 @@
       return;
     }
 
-    fetch("/inventory/ai_lookup?code=" + encodeURIComponent(code))
+    fetch(window.apiUrl("/inventory/ai_lookup?code=" + encodeURIComponent(code)))
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function (data) {
         var mapping = {
@@ -211,9 +211,9 @@
   /* ── GENERATE (core fix: fetch → blob URL) ───────────────── */
   generateBtn.addEventListener("click", function () {
     var value = valueInput.value.trim();
-    var url = "/barcode/preview?type=" + encodeURIComponent(currentType)
+    var url = window.apiUrl("/barcode/preview?type=" + encodeURIComponent(currentType)
             + "&value=" + encodeURIComponent(value)
-            + "&_t=" + Date.now(); /* cache-bust */
+            + "&_t=" + Date.now()); /* cache-bust */
 
     setGenerateLoading(true);
 
@@ -355,7 +355,7 @@
     assignBtn.disabled    = true;
     assignBtn.textContent = "Assigning\u2026";
 
-    fetch("/barcode/assign", {
+    fetch(window.apiUrl("/barcode/assign"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ product_id: productSelect.value, code_type: currentType, value: value }),
@@ -388,7 +388,7 @@
     createBtn.disabled    = true;
     createBtn.textContent = "Saving\u2026";
 
-    fetch("/barcode/create_product", {
+    fetch(window.apiUrl("/barcode/create_product"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

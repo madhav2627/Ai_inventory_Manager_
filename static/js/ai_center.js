@@ -2,7 +2,7 @@
   const currency = window.CURRENCY || "";
 
   // ── Fetch full AI report on load ──────────────────────────────────────
-  fetch("/ai/report")
+  fetch(window.apiUrl("/ai/report"))
     .then(r => r.ok ? r.json() : Promise.reject(r))
     .then(report => {
       renderStatusBar(report.summary);
@@ -186,7 +186,7 @@
           <div style="font-weight:600;margin-top:4px;">${currency}${po.total_cost.toLocaleString()}</div>
         </div>
         <div class="po-card-footer">
-          <a href="/ai/po/${po.id}/print" target="_blank" class="btn btn-sm btn-brass">🖨️ Print</a>
+          <a href="${window.apiUrl('/ai/po/' + po.id + '/print')}" target="_blank" class="btn btn-sm btn-brass">🖨️ Print</a>
         </div>
       </div>
     `).join("");
@@ -253,7 +253,7 @@
     nlpResponse.innerHTML = "Thinking...";
     nlpResponse.classList.add("is-visible");
 
-    fetch("/ai/nlp", {
+    fetch(window.apiUrl("/ai/nlp"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query }),
@@ -300,7 +300,7 @@
       poBtn.disabled = true;
       poBtn.textContent = "Generating...";
 
-      fetch("/ai/restock", { method: "POST" })
+      fetch(window.apiUrl("/ai/restock"), { method: "POST" })
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(result => {
           poBtn.textContent = "🤖 Auto-Generate Purchase Orders";

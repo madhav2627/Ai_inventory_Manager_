@@ -18,6 +18,15 @@
     if (themeMeta) themeMeta.setAttribute('content', dark ? '#0b0e14' : '#f6f3ed');
   })();
 </script>
+<script>
+  window.API_BASE_URL = "{{ api_base_url or '' }}";
+  window.apiUrl = function (path) {
+    var base = (window.API_BASE_URL || "").trim().replace(/\/+$/, "");
+    if (!path) return base || "/";
+    var endpoint = path.startsWith("/") ? path : "/" + path;
+    return base ? base + endpoint : endpoint;
+  };
+</script>
 <title>{% block title %}{{ settings.business_name }}{% endblock %} &middot; AI INVENTORY MANAGER</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=mobile_v12">
 {% block head %}{% endblock %}

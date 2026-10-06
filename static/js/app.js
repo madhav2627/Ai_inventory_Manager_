@@ -1,6 +1,15 @@
 /* ══════════════════════════════════════════════════════════════════
    Ledger — Premium UI interactions
    ══════════════════════════════════════════════════════════════════ */
+if (!window.apiUrl) {
+  window.apiUrl = function (path) {
+    var base = (window.API_BASE_URL || "").trim().replace(/\/+$/, "");
+    if (!path) return base || "/";
+    var endpoint = path.startsWith("/") ? path : "/" + path;
+    return base ? base + endpoint : endpoint;
+  };
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   var reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   document.documentElement.classList.toggle("reduced-motion", !!reducedMotion);

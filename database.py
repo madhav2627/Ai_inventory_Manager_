@@ -24,14 +24,13 @@ if not DATABASE_URL:
     DATABASE_URL = os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL")
 
 USING_POSTGRES = bool(DATABASE_URL)
-if os.environ.get("VERCEL"):
-    DB_PATH = "/tmp/store.db"
-    try:
-        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    except Exception:
-        pass
-else:
-    DB_PATH = os.path.join(BASE_DIR, "data", "store.db")
+DB_PATH = os.environ.get("DB_PATH") or (
+    "/tmp/store.db" if os.environ.get("VERCEL") else os.path.join(BASE_DIR, "data", "store.db")
+)
+try:
+    os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
+except Exception:
+    pass
 
 import logging
 db_logger = logging.getLogger("database")
